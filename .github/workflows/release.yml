@@ -1,0 +1,59 @@
+name: release
+on:
+  workflow_dispatch:
+
+jobs:
+  mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: flucoma/actions/env@main
+      - uses: flucoma/actions/cli@main
+        with:
+          branch: origin/${{ github.ref_name }}
+      - name: Create tarball
+        run: |
+          mkdir -p FluCoMa-CLI-Mac
+          cp fluid-* FluCoMa-CLI-Mac/
+          tar -czf FluCoMa-CLI-Mac.tar.gz FluCoMa-CLI-Mac
+      - name: Sign binaries
+        uses: flucoma/actions/distribution@main
+        with:
+          glob: "FluCoMa-CLI-Mac/*.fluid-*"
+          package: "FluCoMa-CLI-Mac"
+          codesign_options: "runtime"
+          cert: ${{ secrets.CERT }}
+          certpwd: ${{ secrets.CERTPWD }}
+          teamid: ${{ secrets.WWDRTEAMID }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: macbuild
+          path: FluCoMa-CLI-Mac.tar.gz
+      - id: get-version
+        run: echo "version=$(cat flucoma.version.rc)" >> $GITHUB_OUTPUT
+        working-directory: build/_deps/flucoma-core-src
+
+  release:
+    runs-on: ubuntu-20.04
+    needs: [mac]
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: macbuild
+      - name: delete pre-existing release
+        uses: dev-drprasad/delete-tag-and-release@v0.2.1
+        with:
+          delete_release: true
+          tag_name: ${{ needs.linux.outputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: package and upload
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ needs.linux.outputs.version }}
+          body: "This is a release build of the FluCoMa CLI tools for homebrew on Mac. The build hash is ${{ github.sha }}"
+          files: FluCoMa-CLI-Mac.tar.gz
+          prerelease: true
+          tag_name: ${{ needs.linux.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          draft: false
