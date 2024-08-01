@@ -20,16 +20,18 @@ jobs:
           cd flucoma-cli
           git status  # Just to verify the current state
 
-      - name: Prepare directory structure
-        run: |
-          mkdir -p flucoma-cli/build
-          cp -R flucoma-cli/* flucoma-cli/build/
-          ls -R flucoma-cli  # List directory structure for debugging
-
-      - name: Run flucoma/actions/cli
-        uses: flucoma/actions/cli@main
+      - name: Setup Python
+        uses: actions/setup-python@v2
         with:
-          branch: production
+          python-version: "3.9"
+
+      - name: Build FluCoMa CLI
+        run: |
+          cd flucoma-cli
+          mkdir build && cd build
+          cmake -GNinja -DDOCS=ON -DFLUID_BRANCH=production -DPython_ROOT_DIR=${{ env.pythonLocation }} ..
+          pip install -r _deps/flucoma-docs-src/requirements.txt
+          ninja install
 
       - name: Create tarball
         run: |
