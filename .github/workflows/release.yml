@@ -41,7 +41,7 @@ jobs:
       - name: Sign binaries
         uses: flucoma/actions/distribution@main
         with:
-          glob: "FluCoMa-CLI-Mac/*.fluid-*"
+          glob: "fluid -t x"
           package: "FluCoMa-CLI-Mac"
           codesign_options: "runtime"
           cert: ${{ secrets.CERT }}
