@@ -33,12 +33,10 @@ jobs:
           pip install -r _deps/flucoma-docs-src/requirements.txt
           ninja install
 
-      - name: Create tarball
+      - name: Copy binaries
         run: |
-          ls -r
           mkdir -p FluCoMa-CLI-Mac
           cp ./flucoma-cli/release-packaging/FluidCorpusManipulation/bin/fluid-* FluCoMa-CLI-Mac/
-          tar -czf FluCoMa-CLI-Mac.tar.gz FluCoMa-CLI-Mac
 
       - name: Sign binaries
         uses: flucoma/actions/distribution@main
@@ -49,6 +47,11 @@ jobs:
           cert: ${{ secrets.CERT }}
           certpwd: ${{ secrets.CERTPWD }}
           teamid: ${{ secrets.WWDRTEAMID }}
+          apppwd: ${{ secrets.APPSTORECONNECTPWD }}
+          appusr: ${{ secrets.APPSTORECONNECTUSERNAME }}
+
+      - name: make tarball
+        run: tar -czf FluCoMa-CLI-Mac.tar.gz FluCoMa-CLI-Mac
 
       - uses: actions/upload-artifact@v3
         with:
