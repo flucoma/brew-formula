@@ -20,8 +20,10 @@ jobs:
           cd flucoma-cli
           git status  # Just to verify the current state
 
-      - uses: flucoma/actions/cli@main
-        working-directory: ./flucoma-cli
+      - name: Run flucoma/actions/cli
+        uses: flucoma/actions/cli@main
+        with:
+          working-directory: ./flucoma-cli
 
       - name: Create tarball
         run: |
