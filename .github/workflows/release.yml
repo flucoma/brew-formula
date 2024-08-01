@@ -35,6 +35,7 @@ jobs:
 
       - name: Create tarball
         run: |
+          ls -r
           mkdir -p FluCoMa-CLI-Mac
           cp ../release-packaging/FluidCorpusManipulation/bin fluid-* FluCoMa-CLI-Mac/
           tar -czf FluCoMa-CLI-Mac.tar.gz FluCoMa-CLI-Mac
