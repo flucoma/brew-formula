@@ -1,0 +1,3 @@
+[submodule "flucoma-cli"]
+	path = flucoma-cli
+	url = https://github.com/flucoma/flucoma-cli.git
