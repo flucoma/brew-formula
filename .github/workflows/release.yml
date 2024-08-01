@@ -36,13 +36,13 @@ jobs:
       - name: Copy binaries
         run: |
           mkdir -p FluCoMa-CLI-Mac
-          cp ./flucoma-cli/release-packaging/FluidCorpusManipulation/bin/fluid-* FluCoMa-CLI-Mac/
+          fd -t x -I fluid- -x cp {} FluCoMa-CLI-Mac/
 
       - name: Sign binaries
         uses: flucoma/actions/distribution@main
         with:
           glob: "fluid -t x"
-          package: "FluCoMa-CLI-Mac"
+          package: "./FluCoMa-CLI-Mac"
           codesign_options: "runtime"
           cert: ${{ secrets.CERT }}
           certpwd: ${{ secrets.CERTPWD }}
