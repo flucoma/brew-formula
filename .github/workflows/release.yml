@@ -9,15 +9,26 @@ jobs:
       version: ${{ steps.get-version.outputs.version }}
     steps:
       - uses: actions/checkout@v3
-      - uses: flucoma/actions/env@main
-      - uses: flucoma/actions/cli@main
         with:
-          branch: origin/${{ github.ref_name }}
+          submodules: "recursive" # This will checkout all submodules recursively
+
+      - uses: flucoma/actions/env@main
+
+      - name: Update flucoma-cli submodule
+        run: |
+          git submodule update --init --recursive --remote
+          cd flucoma-cli
+          git status  # Just to verify the current state
+
+      - uses: flucoma/actions/cli@main
+        working-directory: ./flucoma-cli
+
       - name: Create tarball
         run: |
           mkdir -p FluCoMa-CLI-Mac
-          cp fluid-* FluCoMa-CLI-Mac/
+          cp flucoma-cli/fluid-* FluCoMa-CLI-Mac/
           tar -czf FluCoMa-CLI-Mac.tar.gz FluCoMa-CLI-Mac
+
       - name: Sign binaries
         uses: flucoma/actions/distribution@main
         with:
@@ -27,13 +38,15 @@ jobs:
           cert: ${{ secrets.CERT }}
           certpwd: ${{ secrets.CERTPWD }}
           teamid: ${{ secrets.WWDRTEAMID }}
+
       - uses: actions/upload-artifact@v3
         with:
           name: macbuild
           path: FluCoMa-CLI-Mac.tar.gz
+
       - id: get-version
         run: echo "version=$(cat flucoma.version.rc)" >> $GITHUB_OUTPUT
-        working-directory: build/_deps/flucoma-core-src
+        working-directory: flucoma-cli/build/_deps/flucoma-core-src
 
   release:
     runs-on: ubuntu-20.04
@@ -42,6 +55,7 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: macbuild
+
       - name: delete pre-existing release
         uses: dev-drprasad/delete-tag-and-release@v0.2.1
         with:
@@ -49,6 +63,7 @@ jobs:
           tag_name: ${{ needs.mac.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: package and upload
         uses: softprops/action-gh-release@v1
         with:
