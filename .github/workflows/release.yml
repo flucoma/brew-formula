@@ -20,13 +20,15 @@ jobs:
           cd flucoma-cli
           git status  # Just to verify the current state
 
+      - name: Change to flucoma-cli directory
+        run: cd flucoma-cli
+
       - name: Run flucoma/actions/cli
         uses: flucoma/actions/cli@main
-        with:
-          working-directory: ./flucoma-cli
 
       - name: Create tarball
         run: |
+          cd ..  # Move back to the root directory
           mkdir -p FluCoMa-CLI-Mac
           cp flucoma-cli/fluid-* FluCoMa-CLI-Mac/
           tar -czf FluCoMa-CLI-Mac.tar.gz FluCoMa-CLI-Mac
