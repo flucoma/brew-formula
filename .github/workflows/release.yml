@@ -39,7 +39,6 @@ jobs:
       - name: Copy binaries
         run: |
           mkdir -p FluCoMa-CLI-Mac
-          fd -t x -I fluid- -x cp {} FluCoMa-CLI-Mac/
 
       - name: Sign binaries
         uses: flucoma/actions/distribution@main
