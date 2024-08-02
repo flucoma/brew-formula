@@ -9,17 +9,18 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          submodules: "recursive" # This will checkout all submodules recursively
+          submodules: "recursive"
+
       - uses: flucoma/actions/env@main
       - name: Update flucoma-cli submodule
         run: |
           git submodule update --init --recursive --remote
-          cd flucoma-cli
-          git status # Just to verify the current state
+
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
           python-version: "3.9"
+
       - name: install fd
         run: brew install fd
       - name: Build FluCoMa CLI
@@ -28,11 +29,13 @@ jobs:
           mkdir build && cd build
           cmake -GNinja -DDOCS=ON -DFLUID_BRANCH=production -DPython_ROOT_DIR=${{ env.pythonLocation }} ..
           pip install -r _deps/flucoma-docs-src/requirements.txt
-          ninja install
+          ninja fluid-ampslice
 
       - name: Copy binaries
         run: |
-          mkdir -p FluCoMa-CLI-Mac
+          mkdir -p flucoma-cli-brew
+          cd bin
+          fd -t x -I -x cp {} ../flucoma-cli-brew
 
       - name: Sign and notarize binaries
         run: |
@@ -58,43 +61,35 @@ jobs:
 
           xcrun notarytool store-credentials "ACPASS" --apple-id ${{ secrets.APPSTORECONNECTUSERNAME }} --team-id ${{ secrets.WWDRTEAMID }} --password ${{ secrets.APPSTORECONNECTPWD }}
 
-          # cd to the package
-          cd FluCoMa-CLI-Mac
-
-          # what are we working with here?
-          fd "fluid -t x" -E .git -I
+          cd flucoma-cli-brew
 
           # sign every binary in the binary directory
-          fd "fluid -t x" -E .git -I -x codesign --options=runtime -s "Developer ID Application" {}
+          fd fluid- -t x -I -x codesign --options=runtime -s "Developer ID Application" {}
 
           # Create a zip for notarization
-          zip -r ../FluCoMa-CLI-Mac.zip .
+          zip -r ../flucoma-cli-brew.zip .
 
           # Submit for notarization
-          xcrun notarytool submit ../FluCoMa-CLI-Mac.zip --keychain-profile "ACPASS" --wait
+          xcrun notarytool submit ../flucoma-cli-brew.zip --keychain-profile "ACPASS" --wait
 
           # Unzip the notarized files
-          unzip -o ../FluCoMa-CLI-Mac.zip -d .
+          unzip -o ../flucoma-cli-brew.zip -d .
 
           # Staple the binaries
-          fd "fluid -t x" -E .git -I -x xcrun stapler staple {}
+          fd fluid- -t x -I -x xcrun stapler staple {}
 
       - name: make tarball
-        run: tar -czf FluCoMa-CLI-Mac.tar.gz FluCoMa-CLI-Mac
+        run: tar -czf flucoma-cli-brew.tar.gz flucoma-cli-brew
+
       - uses: actions/upload-artifact@v3
         with:
           name: macbuild
-          path: FluCoMa-CLI-Mac.tar.gz
+          path: flucoma-cli-brew.tar.gz
 
-      - name: make tarball
-        run: tar -czf FluCoMa-CLI-Mac.tar.gz FluCoMa-CLI-Mac
-      - uses: actions/upload-artifact@v3
-        with:
-          name: macbuild
-          path: FluCoMa-CLI-Mac.tar.gz
       - id: get-version
         run: echo "version=$(cat flucoma.version.rc)" >> $GITHUB_OUTPUT
         working-directory: flucoma-cli/build/_deps/flucoma-core-src
+
   release:
     runs-on: ubuntu-20.04
     needs: [mac]
@@ -114,7 +109,7 @@ jobs:
         with:
           name: ${{ needs.mac.outputs.version }}
           body: "This is a release build of the FluCoMa CLI tools for homebrew on Mac. The build hash is ${{ github.sha }}"
-          files: FluCoMa-CLI-Mac.tar.gz
+          files: flucoma-cli-brew.tar.gz
           prerelease: true
           tag_name: ${{ needs.mac.outputs.version }}
           target_commitish: ${{ github.sha }}
