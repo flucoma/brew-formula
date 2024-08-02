@@ -70,7 +70,9 @@ jobs:
           fd fluid- -t x -I -x codesign --options=runtime -s "Developer ID Application" {}
 
       - name: make tarball
-        run: tar -czf flucoma-cli-brew.tar.gz flucoma-cli/flucoma-cli-brew
+        run: |
+          cd flucoma-cli
+          tar -czf ../flucoma-cli-brew.tar.gz -C flucoma-cli-brew .
 
       - uses: actions/upload-artifact@v3
         with:
