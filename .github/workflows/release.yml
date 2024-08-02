@@ -70,12 +70,12 @@ jobs:
           fd fluid- -t x -I -x codesign --options=runtime -s "Developer ID Application" {}
 
       - name: make tarball
-        run: tar -czf flucoma-cli-brew.tar.gz flucoma-cli-brew
+        run: tar -czf flucoma-cli-brew.tar.gz flucoma-cli/flucoma-cli-brew
 
       - uses: actions/upload-artifact@v3
         with:
           name: macbuild
-          path: flucoma-cli-brew.tar.gz
+          path: flucoma-cli/flucoma-cli-brew.tar.gz
 
       - id: get-version
         run: echo "version=$(cat flucoma.version.rc)" >> $GITHUB_OUTPUT
