@@ -34,6 +34,7 @@ jobs:
       - name: Copy binaries
         run: |
           mkdir -p flucoma-cli-brew
+          ls -r
           cd bin
           fd -t x -I -x cp {} ../flucoma-cli-brew
 
