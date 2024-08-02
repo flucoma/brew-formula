@@ -1,7 +1,6 @@
 name: release
 on:
   workflow_dispatch:
-
 jobs:
   mac:
     runs-on: macos-latest
@@ -11,23 +10,18 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: "recursive" # This will checkout all submodules recursively
-
       - uses: flucoma/actions/env@main
-
       - name: Update flucoma-cli submodule
         run: |
           git submodule update --init --recursive --remote
           cd flucoma-cli
-          git status  # Just to verify the current state
-
+          git status # Just to verify the current state
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
           python-version: "3.9"
-
       - name: install fd
         run: brew install fd
-
       - name: Build FluCoMa CLI
         run: |
           cd flucoma-cli
@@ -40,30 +34,67 @@ jobs:
         run: |
           mkdir -p FluCoMa-CLI-Mac
 
-      - name: Sign binaries
-        uses: flucoma/actions/distribution@main
-        with:
-          glob: "fluid -t x"
-          package: "./FluCoMa-CLI-Mac"
-          codesign_options: "runtime"
-          cert: ${{ secrets.CERT }}
-          certpwd: ${{ secrets.CERTPWD }}
-          teamid: ${{ secrets.WWDRTEAMID }}
-          apppwd: ${{ secrets.APPSTORECONNECTPWD }}
-          appusr: ${{ secrets.APPSTORECONNECTUSERNAME }}
+      - name: Sign and notarize binaries
+        run: |
+          # create variables
+          CERTPATH=$RUNNER_TEMP/flucoma.p12
+          KEYCHAINPWD=foobarbazbob
+          KEYCHAINPATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          # Decode the certificate
+          echo -n "${{ secrets.CERT }}" | base64 --decode --output $CERTPATH
+
+          # create temporary keychain
+          security create-keychain -p "$KEYCHAINPWD" "$KEYCHAINPATH"
+
+          # append temp keychain to the user domain
+          security list-keychain -d user -s "$KEYCHAINPATH"
+          security set-keychain-settings "$KEYCHAINPATH"
+          security unlock-keychain -p "$KEYCHAINPWD" "$KEYCHAINPATH"
+
+          # import p12 to keychain
+          security import "$CERTPATH" -P "${{ secrets.CERTPWD }}" -A -t cert -f pkcs12 -k "$KEYCHAINPATH" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:, -s -k "$KEYCHAINPATH" -D "${{ secrets.CERT }}" -t private "$KEYCHAINPATH"
+
+          xcrun notarytool store-credentials "ACPASS" --apple-id ${{ secrets.APPSTORECONNECTUSERNAME }} --team-id ${{ secrets.WWDRTEAMID }} --password ${{ secrets.APPSTORECONNECTPWD }}
+
+          # cd to the package
+          cd FluCoMa-CLI-Mac
+
+          # what are we working with here?
+          fd "fluid -t x" -E .git -I
+
+          # sign every binary in the binary directory
+          fd "fluid -t x" -E .git -I -x codesign --options=runtime -s "Developer ID Application" {}
+
+          # Create a zip for notarization
+          zip -r ../FluCoMa-CLI-Mac.zip .
+
+          # Submit for notarization
+          xcrun notarytool submit ../FluCoMa-CLI-Mac.zip --keychain-profile "ACPASS" --wait
+
+          # Unzip the notarized files
+          unzip -o ../FluCoMa-CLI-Mac.zip -d .
+
+          # Staple the binaries
+          fd "fluid -t x" -E .git -I -x xcrun stapler staple {}
 
       - name: make tarball
         run: tar -czf FluCoMa-CLI-Mac.tar.gz FluCoMa-CLI-Mac
-
       - uses: actions/upload-artifact@v3
         with:
           name: macbuild
           path: FluCoMa-CLI-Mac.tar.gz
 
+      - name: make tarball
+        run: tar -czf FluCoMa-CLI-Mac.tar.gz FluCoMa-CLI-Mac
+      - uses: actions/upload-artifact@v3
+        with:
+          name: macbuild
+          path: FluCoMa-CLI-Mac.tar.gz
       - id: get-version
         run: echo "version=$(cat flucoma.version.rc)" >> $GITHUB_OUTPUT
         working-directory: flucoma-cli/build/_deps/flucoma-core-src
-
   release:
     runs-on: ubuntu-20.04
     needs: [mac]
@@ -71,7 +102,6 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: macbuild
-
       - name: delete pre-existing release
         uses: dev-drprasad/delete-tag-and-release@v0.2.1
         with:
@@ -79,7 +109,6 @@ jobs:
           tag_name: ${{ needs.mac.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: package and upload
         uses: softprops/action-gh-release@v1
         with:
