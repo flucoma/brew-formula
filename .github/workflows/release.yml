@@ -69,8 +69,6 @@ jobs:
           # sign every binary in the binary directory
           fd fluid- -t x -I -x codesign --options=runtime -s "Developer ID Application" {}
 
-          xcrun notarytool submit ../flucoma-cli-brew.zip --keychain-profile "ACPASS" --wait
-
       - name: make tarball
         run: tar -czf flucoma-cli-brew.tar.gz flucoma-cli-brew
 
