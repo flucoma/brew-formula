@@ -26,13 +26,15 @@ jobs:
       - name: Build FluCoMa CLI
         run: |
           cd flucoma-cli
-          mkdir build && cd build
+          mkdir build
+          cd build
           cmake -GNinja -DDOCS=ON -DFLUID_BRANCH=production -DPython_ROOT_DIR=${{ env.pythonLocation }} ..
           pip install -r _deps/flucoma-docs-src/requirements.txt
           ninja fluid-ampslice
 
       - name: Copy binaries
         run: |
+          cd flucoma-cli
           mkdir -p flucoma-cli-brew
           ls -r
           cd bin
@@ -62,7 +64,7 @@ jobs:
 
           xcrun notarytool store-credentials "ACPASS" --apple-id ${{ secrets.APPSTORECONNECTUSERNAME }} --team-id ${{ secrets.WWDRTEAMID }} --password ${{ secrets.APPSTORECONNECTPWD }}
 
-          cd flucoma-cli-brew
+          cd flucoma-cli/flucoma-cli-brew
 
           # sign every binary in the binary directory
           fd fluid- -t x -I -x codesign --options=runtime -s "Developer ID Application" {}
