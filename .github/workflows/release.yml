@@ -69,17 +69,7 @@ jobs:
           # sign every binary in the binary directory
           fd fluid- -t x -I -x codesign --options=runtime -s "Developer ID Application" {}
 
-          # Create a zip for notarization
-          zip -r ../flucoma-cli-brew.zip .
-
-          # Submit for notarization
           xcrun notarytool submit ../flucoma-cli-brew.zip --keychain-profile "ACPASS" --wait
-
-          # Unzip the notarized files
-          unzip -o ../flucoma-cli-brew.zip -d .
-
-          # Staple the binaries
-          fd fluid- -t x -I -x xcrun stapler staple {}
 
       - name: make tarball
         run: tar -czf flucoma-cli-brew.tar.gz flucoma-cli-brew
