@@ -75,7 +75,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: macbuild
-          path: flucoma-cli/flucoma-cli-brew.tar.gz
+          path: flucoma-cli-brew.tar.gz
 
       - id: get-version
         run: echo "version=$(cat flucoma.version.rc)" >> $GITHUB_OUTPUT
