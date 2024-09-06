@@ -74,7 +74,7 @@ jobs:
           cd flucoma-cli
           tar -czf ../flucoma-cli-brew.tar.gz -C flucoma-cli-brew .
 
-      - uses: actions/upload-artifact@v4.1.7
+      - uses: actions/upload-artifact@v4.3.6
         with:
           name: macbuild
           path: flucoma-cli-brew.tar.gz
@@ -87,7 +87,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [mac]
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@4.1.7
         with:
           name: macbuild
       - name: delete pre-existing release
