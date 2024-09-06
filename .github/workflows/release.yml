@@ -87,7 +87,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [mac]
     steps:
-      - uses: actions/download-artifact@4.1.7
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: macbuild
       - name: delete pre-existing release
